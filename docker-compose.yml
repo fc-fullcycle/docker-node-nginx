@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  database:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    container_name: database
+    restart: always
+    user: 1000:1000
+    volumes:
+      - ./database/mysql:/var/lib/mysql
+      - ./database/create-people-table.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./database/data.sql:/docker-entrypoint-initdb.d/2.sql
+    networks:
+      - node-mysql-net
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile-node
+    image: fcoromoto/node-nginx-server
+    volumes:
+      - ./app/index.js:/app/index.js
+    networks:
+      - node-mysql-net
+      - proxy-net
+    entrypoint: wait-for-it database:3306 -- npm run start-dev
+    depends_on:
+      - database
+
+  nginx-proxy:
+    container_name: nginx-proxy
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    image: fcoromoto/nginx-proxy
+    networks:
+      - proxy-net
+    ports:
+      - "8080:80"
+
+networks:
+  node-mysql-net:
+  proxy-net:
