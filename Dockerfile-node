@@ -1,4 +1,4 @@
-FROM node:alpine3.18
+FROM node:alpine3.18 as prod
 
 RUN apk update && \
     apk add --no-cache --upgrade bash && \
@@ -7,15 +7,25 @@ RUN apk update && \
     chmod +x /usr/bin/wait-for-it
 
 USER node
-
-WORKDIR app/
-
+WORKDIR /usr/src/app
 COPY app/package.json .
-
 RUN npm install
-
 COPY app/index.js .
-
 EXPOSE 3000
 
 CMD ["npm" , "start" ]
+
+FROM node:alpine3.18 as dev
+
+RUN apk update && \
+    apk add --no-cache --upgrade bash && \
+    apk add --no-cache wget && \
+    wget -q -O /usr/bin/wait-for-it https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x /usr/bin/wait-for-it
+
+COPY start-dev.sh /usr/local/bin/start-dev.sh
+RUN chmod +x /usr/local/bin/start-dev.sh
+
+USER node
+WORKDIR /usr/src/app
+EXPOSE 3000

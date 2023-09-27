@@ -6,7 +6,6 @@ services:
     command: --innodb-use-native-aio=0
     container_name: database
     restart: always
-    user: 1000:1000
     volumes:
       - ./database/mysql:/var/lib/mysql
       - ./database/create-people-table.sql:/docker-entrypoint-initdb.d/1.sql
@@ -21,18 +20,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-node
+      target: prod
     image: fcoromoto/node-nginx-server
-    volumes:
-      - ./app/index.js:/app/index.js
     networks:
       - node-mysql-net
       - proxy-net
-    entrypoint: wait-for-it database:3306 -- npm run start-dev
+    entrypoint: wait-for-it database:3306 -- npm run start
     depends_on:
       - database
 
-  nginx-proxy:
-    container_name: nginx-proxy
+  proxy:
+    container_name: proxy
     build:
       context: .
       dockerfile: Dockerfile-nginx

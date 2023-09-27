@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile-node
+      target: dev
+    image: fcoromoto/node-nginx-server
+    tty: true
+    volumes:
+      - ./app:/usr/src/app
+    networks:
+      - node-mysql-net
+      - proxy-net
+    entrypoint: wait-for-it database:3306 -- start-dev.sh
+    depends_on:
+      - database
